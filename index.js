@@ -127,13 +127,54 @@ app.post('/api', function(req, res, next){
       var classifiers = images[0].classifiers;
       var classes = classifiers[0].classes;
       var item = classes[0];
-      res.send({
-          "nameEN": item.class,
-          "nameKH": "translated",
-          "score": item.score,
-          "url": req.file.path
-      });  
+      // res.send({
+      //     "nameEN": item.class,
+      //     "nameKH": "translated",
+      //     "score": item.score,
+      //     "url": req.file.path
+      // });  
 
+      var fromLang = "en";
+      var toLang = "km";
+      var text = item.class;
+
+      var jsonPayload = JSON.stringify({
+          fromLang: fromLang,
+          toLang: toLang,
+          text: text
+      });
+
+      var options = {
+          hostname: "api.whatsmate.net",
+          port: 80,
+          path: "/v1/translation/translate",
+          method: "POST",
+          headers: {
+              "Content-Type": "application/json",
+              "X-WM-CLIENT-ID": clientId,
+              "X-WM-CLIENT-SECRET": clientSecret,
+              "Content-Length": Buffer.byteLength(jsonPayload)
+          }
+      };
+
+      var request = new http.ClientRequest(options);
+      request.end(jsonPayload);
+
+      request.on('response', function (response) {
+          console.log('Status code: ' + response.statusCode);
+          response.setEncoding('utf8');
+          response.on('data', function (translated) {
+              console.log('Translated text:');
+              console.log(translated);    
+              res.send({
+                  "nameEN": item.class,
+                  "nameKH": translated,
+                  "score": item.score,
+                  "url": req.file.path
+              });  
+
+          });
+      });
 
    
 
