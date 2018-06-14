@@ -6,7 +6,7 @@ const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 const User = require('./models/user');
 const Record = require('./models/record');
-
+const request = require('request');
 app.use(bodyParser.json());
 // translate
 var http = require('http');
@@ -133,50 +133,21 @@ app.post('/api', function(req, res, next){
       //     "score": item.score,
       //     "url": req.file.path
       // });  
-
-      var fromLang = "en";
-      var toLang = "km";
-      var text = item.class;
-
-      var jsonPayload = JSON.stringify({
-          fromLang: fromLang,
-          toLang: toLang,
-          text: text
-      });
-
-      var options = {
-          hostname: "api.whatsmate.net",
-          port: 80,
-          path: "/v1/translation/translate",
-          method: "POST",
-          headers: {
-              "Content-Type": "application/json",
-              "X-WM-CLIENT-ID": clientId,
-              "X-WM-CLIENT-SECRET": clientSecret,
-              "Content-Length": Buffer.byteLength(jsonPayload)
-          }
-      };
-
-      var request = new http.ClientRequest(options);
-      request.end(jsonPayload);
-
-      request.on('response', function (response) {
-          console.log('Status code: ' + response.statusCode);
-          response.setEncoding('utf8');
-          response.on('data', function (translated) {
-              console.log('Translated text:');
-              console.log(translated);    
-              res.send({
-                  "nameEN": item.class,
-                  "nameKH": translated,
-                  "score": item.score,
-                  "url": req.file.path
-              });  
-
-          });
-      });
-
-   
+      const url = "http://128.199.88.174:8090/api/translation?target=km&text="+item.class;
+      request(url, { json: true }, (err, response, body) => {
+        if (err) { 
+          res.send("Translation Error");
+          return console.log(err); 
+        }
+        
+        res.send({
+            "nameEN": item.class,
+            "nameKH": body,
+            "score": item.score,
+            "url": req.file.path
+        });  
+        
+      });      
 
 
     }     
@@ -211,20 +182,40 @@ app.get('/api', function(req, res, next){
       var classes = classifiers[0].classes;
       var item = classes[0];
       console.log(item);
-
-      res.send({
-          "nameEN": item.class,
-          "nameKH": "translated",
-          "score": item.score,
-          "url": "req.file.path"
-      });  
-
+      // res.send({
+      //     "nameEN": item.class,
+      //     "nameKH": "translated",
+      //     "score": item.score,
+      //     "url": "req.file.path"
+      // });  
+      const url = "http://128.199.88.174:8090/api/translation?target=km&text="+item.class;
+      request(url, { json: true }, (err, response, body) => {
+        if (err) { 
+          res.send("Translation Error");
+          return console.log(err); 
+        }
+        
+        res.send({
+            "nameEN": item.class,
+            "nameKH": body,
+            "score": item.score,
+            "url": "req.file.path"
+        });  
+        
+      });
 
 		}			
 	});		
 });
 
 
+// app.get('/api/test', function(req, res, next){
+
+//   request(url, { json: true }, (err, res, body) => {
+//     if (err) { return console.log(err); }
+//     console.log(body);
+//   });
+// });
 
 app.post('/api/user', async function(req, res, next){
 
